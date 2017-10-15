@@ -3,7 +3,17 @@
 set -e
 source $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/settings.properties
 
-docker-compose -f docker-compose.yml up -d
+if type docker-compose 2> /dev/null; then
+  docker-compose -f docker-compose.yml up -d
+  docker_or_docker_compose=docker-compose
+elif type docker 2> /dev/null; then
+  docker run -d --restart always --name mysql -e MYSQL_ROOT_PASSWORD=really_hard_password mysql:5.7
+  docker run -d --restart always --name wordpress -e WORDPRESS_DB_PASSWORD=really_hard_password -p 8080:80 --link mysql:mysql conetix/wordpress-with-wp-cli
+  docker_or_docker_compose=docker
+else
+  echo "We need docker to be installed for this to work. Sorry."
+  exit 1
+fi
 
 echo -n "Wordpress should be up and running in a few second..."
 
@@ -22,9 +32,9 @@ else
   exit 1
 fi
 
-docker-compose exec wordpress wp plugin install https://github.com/WP-API/Basic-Auth/archive/master.zip
-docker-compose exec wordpress wp plugin activate Basic-Auth
-docker-compose exec wordpress wp plugin install rest-api
-docker-compose exec wordpress wp plugin activate rest-api
+$docker_or_docker_compose exec wordpress wp plugin install https://github.com/WP-API/Basic-Auth/archive/master.zip
+$docker_or_docker_compose exec wordpress wp plugin activate Basic-Auth
+$docker_or_docker_compose exec wordpress wp plugin install rest-api
+$docker_or_docker_compose exec wordpress wp plugin activate rest-api
 
 echo "We are now done, embrace your inner blogger."
