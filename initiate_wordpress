@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+source $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/settings.properties
+
+docker-compose -f docker-compose.yml up -d
+
+echo -n "Wordpress should be up and running in a few second..."
+
+cnt=0
+while [ $cnt -lt 120 ] && [ $(curl -s -o /dev/null -w "%{http_code}" http://${wp_host_ip}:8080/wp-admin/install.php) != '200' ]; do
+  sleep 1
+  cnt=$((cnt + 1))
+done
+
+if [ $cnt -lt 120 ]; then
+  echo "and there we go."
+  curl -s http://${wp_host_ip}:8080/wp-admin/install.php?step=2 -X POST -o /dev/null \
+    --data "weblog_title=SRE&user_name=${wp_username}&admin_password=${wp_password}&pass1-text=${wp_password}&admin_password2=${wp_password}&pw_weak=on&admin_email=${wp_email}&Submit=Installera+WordPress&language=sv_SE"
+else
+  echo "but something went weird, please control logs with 'docker-compose logs'"
+  exit 1
+fi
+
+docker-compose exec wordpress wp plugin install https://github.com/WP-API/Basic-Auth/archive/master.zip
+docker-compose exec wordpress wp plugin activate Basic-Auth
+docker-compose exec wordpress wp plugin install rest-api
+docker-compose exec wordpress wp plugin activate rest-api
+
+echo "We are now done, embrace your inner blogger."

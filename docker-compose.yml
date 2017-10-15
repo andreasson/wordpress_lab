@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+
+  wordpress:
+    #image: wordpress
+    image: conetix/wordpress-with-wp-cli
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      WORDPRESS_DB_PASSWORD: really_hard_password
+
+  mysql:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: really_hard_password
