@@ -1,18 +1,6 @@
 #!/bin/bash
 
 set -e
+
 source $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/settings.properties
-
-read -p "Enter a titel: " title
-read -p "Content: " content
-
-title=$(echo $title | sed 's/"/\\"/g')
-content=$(echo $content | sed 's/"/\\"/g')
-
-json=$(echo '{"title":"$title","content":"Content","type":"page","status":"publish"}' | jq ".title = \"$title\"" | jq ".content = \"$content\"")
-
-curl -s -H "Accept: application/json" -H "Content-Type: application/json" \
-  --user ${wp_username}:${wp_password} -d "$json" -o /dev/null \
-  http://${wp_host_ip}:8080/wp-json/wp/v2/posts
-
-echo "Page is now published"
+python $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/post.py
